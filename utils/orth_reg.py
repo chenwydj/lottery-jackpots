@@ -1,5 +1,6 @@
 import torch
 from torch.nn.functional import normalize
+from pdb import set_trace as bp
 
 def l2_reg_ortho(mdl):
     l2_reg = None
