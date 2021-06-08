@@ -6,6 +6,7 @@ def l2_reg_ortho(mdl):
     l2_reg = None
     # for W in mdl.parameters():
     for n, m in mdl.named_modules():
+        if not hasattr(m, "sparse_weight"): continue
         # if W.ndimension() < 2:
         if m.sparse_weight.ndimension() < 2:
             continue
