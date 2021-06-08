@@ -2,12 +2,12 @@ from __future__ import absolute_import
 import datetime
 import shutil
 from pathlib import Path
-import os 
+import os
 import math
 import torch
 import logging
 import torch.nn as nn
-    
+
 class LabelSmoothing(nn.Module):
     """
     NLL loss with label smoothing.
@@ -54,15 +54,15 @@ class AverageMeter(object):
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
-     
+
 
 def ensure_path(directory):
     directory = Path(directory)
     directory.mkdir(parents=True,exist_ok=True)
- 
+
 def mkdir(path):
     if not os.path.isdir(path):
-        mkdir(os.path.split(path)[0])  
+        mkdir(os.path.split(path)[0])
     else:
         return
     os.mkdir(path)
@@ -176,12 +176,11 @@ def freeze_model_weights(model):
 
 
 def set_model_prune_rate(model, pr_cfg, logger):
-    
+
     logger.info(f"==> Setting prune rate of network to {pr_cfg}")
     i = 0
     for n, m in model.named_modules():
         if hasattr(m, "set_prune_rate"):
             m.set_prune_rate(pr_cfg[i])
             logger.info(f"==> Setting prune rate of {n} to {pr_cfg[i]}")
-            i += 1    
-            
+            i += 1

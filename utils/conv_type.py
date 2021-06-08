@@ -43,13 +43,19 @@ class PretrainConv(nn.Conv2d):
         self.mask = nn.Parameter(torch.ones(self.weight.shape))
 
     def forward(self, x):
-        mask = GetMask.apply(self.clamped_masks, self.prune_rate)
-        sparseWeight = mask * self.weight
+        # mask = GetMask.apply(self.clamped_masks, self.prune_rate)
+        # sparseWeight = mask * self.weight
         x = F.conv2d(
-            x, sparseWeight, self.bias, self.stride, self.padding, self.dilation, self.groups
+            # x, sparseWeight, self.bias, self.stride, self.padding, self.dilation, self.groups
+            x, self.sparse_weight, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
         return x
-    
+
+    @property
+    def sparse_weight(self):
+        mask = GetMask.apply(self.clamped_masks, self.prune_rate)
+        return mask * self.weight
+
     @property
     def clamped_masks(self):
         return self.mask.abs()

@@ -15,6 +15,7 @@ from utils.common import *
 from importlib import import_module
 
 from utils.conv_type import *
+from utils.orth_reg import l2_reg_ortho
 
 import models
 import pdb
@@ -37,8 +38,8 @@ print('==> Loading Data..')
 if args.data_set == 'cifar10':
     loader = cifar10.Data(args)
 elif args.data_set == 'cifar100':
-    loader = cifar100.Data(args)  
-              
+    loader = cifar100.Data(args)
+
 def train(model, optimizer, trainLoader, args, epoch):
 
     model.train()
@@ -50,9 +51,15 @@ def train(model, optimizer, trainLoader, args, epoch):
 
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
-        output = model(inputs)
+
+        # supervised
+        # output = model(inputs)
         #adjust_learning_rate(optimizer, epoch, batch, print_freq, args)
-        loss = loss_func(output, targets)
+        # loss = loss_func(output, targets)
+
+        # Orth Reg
+        loss = l2_reg_ortho(model)
+
         loss.backward()
         losses.update(loss.item(), inputs.size(0))
         optimizer.step()
@@ -111,8 +118,8 @@ def generate_pr_cfg(model):
         weights = []
         for name, module in model.named_modules():
             if hasattr(module, "set_prune_rate") and name != 'fc' and name != 'classifier':
-                conv_weight = module.weight.data.detach().cpu()   
-                weights.append(conv_weight.view(-1)) 
+                conv_weight = module.weight.data.detach().cpu()
+                weights.append(conv_weight.view(-1))
         all_weights = torch.cat(weights,0)
         preserve_num = int(all_weights.size(0) * (1 - args.prune_rate))
         preserve_weight, _ = torch.topk(torch.abs(all_weights), preserve_num)
@@ -157,7 +164,7 @@ def main():
 
     if args.resume == True:
         start_epoch, best_acc = resume(args, model, optimizer)
-    
+
     if len(args.gpus) != 1:
         model = nn.DataParallel(model, device_ids=args.gpus)
 
@@ -186,7 +193,7 @@ def main():
 
 def resume(args, model, optimizer):
     if os.path.exists(args.job_dir+'/checkpoint/model_last.pt'):
-        print(f"=> Loading checkpoint ")
+        print("=> Loading checkpoint ")
 
         checkpoint = torch.load(args.job_dir+'/checkpoint/model_last.pt')
 
@@ -212,11 +219,11 @@ def get_model(args,logger):
     model = models.__dict__[args.arch]().to(device)
     ckpt = torch.load(args.pretrained_model, map_location=device)
     model.load_state_dict(ckpt['state_dict'],strict=False)
-    
+
     #applying sparsity to the network
     pr_cfg = generate_pr_cfg(model)
     set_model_prune_rate(model, pr_cfg, logger)
-    
+
     if args.freeze_weights:
         freeze_model_weights(model)
 
