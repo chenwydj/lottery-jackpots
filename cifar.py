@@ -58,6 +58,8 @@ def train(model, optimizer, trainLoader, args, epoch):
         # loss = loss_func(output, targets)
 
         # Orth Reg
+        with torch.no_grad():
+            output = model(inputs)
         loss = l2_reg_ortho(model)
 
         loss.backward()
