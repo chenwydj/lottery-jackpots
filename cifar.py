@@ -87,9 +87,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         #         )
         #     )
         #     start_time = current_time
-    logger.writer.add_scalar("train/loss", losses.avg, epoch)
-    logger.writer.add_scalar("train/accuracy", accuracy.avg, epoch)
-    return losses.avg, accuracy.avg
+    return float(losses.avg), float(accuracy.avg)
 
 def validate(model, testLoader, logger):
     global best_acc
@@ -110,14 +108,12 @@ def validate(model, testLoader, logger):
             predicted = utils.accuracy(outputs, targets)
             accurary.update(predicted[0], inputs.size(0))
 
-        # current_time = time.time()
-        # logger.info(
-        #     'Test Loss {:.4f}\tAccurary {:.2f}%\t\tTime {:.2f}s\n'
-        #     .format(float(losses.avg), float(accurary.avg), (current_time - start_time))
-        # )
-    logger.writer.add_scalar("test/loss", losses.avg, epoch)
-    logger.writer.add_scalar("test/accuracy", accuracy.avg, epoch)
-    return losses.avg, accuracy.avg
+        current_time = time.time()
+        logger.info(
+            'Test Loss {:.4f}\tAccurary {:.2f}%\t\tTime {:.2f}s\n'
+            .format(float(losses.avg), float(accurary.avg), (current_time - start_time))
+        )
+    return float(losses.avg), float(accuracy.avg)
 
 def generate_pr_cfg(model):
     cfg_len = {
