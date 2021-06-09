@@ -49,7 +49,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
 
     model.train()
     losses = utils.AverageMeter(':.4e')
-    accurary = utils.AverageMeter(':6.3f')
+    accuracy = utils.AverageMeter(':6.3f')
     print_freq = len(trainLoader.dataset) // args.train_batch_size // 10
     start_time = time.time()
     for batch, (inputs, targets) in enumerate(trainLoader):
@@ -72,7 +72,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         optimizer.step()
 
         prec1 = utils.accuracy(output, targets)
-        accurary.update(prec1[0], inputs.size(0))
+        accuracy.update(prec1[0], inputs.size(0))
 
         # if batch % print_freq == 0 and batch != 0:
         #     current_time = time.time()
@@ -94,7 +94,7 @@ def validate(model, testLoader, logger):
     model.eval()
 
     losses = utils.AverageMeter(':.4e')
-    accurary = utils.AverageMeter(':6.3f')
+    accuracy = utils.AverageMeter(':6.3f')
 
     start_time = time.time()
 
@@ -106,7 +106,7 @@ def validate(model, testLoader, logger):
 
             losses.update(loss.item(), inputs.size(0))
             predicted = utils.accuracy(outputs, targets)
-            accurary.update(predicted[0], inputs.size(0))
+            accuracy.update(predicted[0], inputs.size(0))
 
         current_time = time.time()
         logger.info(
