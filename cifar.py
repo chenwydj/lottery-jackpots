@@ -8,6 +8,7 @@ import time
 import copy
 import sys
 import random
+from tqdm import tqdm
 import numpy as np
 import heapq
 from data import cifar10, cifar100
@@ -16,16 +17,19 @@ from importlib import import_module
 
 from utils.conv_type import *
 from utils.orth_reg import l2_reg_ortho
+from utils.logger import prepare_logger, prepare_seed
 
 import models
-import pdb
+from pdb import set_trace as bp
 
 visible_gpus_str = ','.join(str(i) for i in args.gpus)
 os.environ['CUDA_VISIBLE_DEVICES'] = visible_gpus_str
 args.gpus = [i for i in range(len(args.gpus))]
 checkpoint = utils.checkpoint(args)
 now = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
-logger = utils.get_logger(os.path.join(args.job_dir, 'logger'+now+'.log'))
+# logger = utils.get_logger(os.path.join(args.job_dir, 'logger'+now+'.log'))
+args.save_dir = os.path.join(args.job_dir, 'logger'+now+'.log')
+logger = prepare_logger(args)
 device = torch.device(f"cuda:{args.gpus[0]}") if torch.cuda.is_available() else 'cpu'
 
 if args.label_smoothing is None:
@@ -40,7 +44,8 @@ if args.data_set == 'cifar10':
 elif args.data_set == 'cifar100':
     loader = cifar100.Data(args)
 
-def train(model, optimizer, trainLoader, args, epoch):
+
+def train(model, optimizer, trainLoader, args, epoch, logger):
 
     model.train()
     losses = utils.AverageMeter(':.4e')
@@ -82,8 +87,11 @@ def train(model, optimizer, trainLoader, args, epoch):
                 )
             )
             start_time = current_time
+    logger.writer.add_scalar("train/loss", losses.avg, epoch)
+    logger.writer.add_scalar("train/accuracy", accuracy.avg, epoch)
+    return losses.avg, accuracy.avg
 
-def validate(model, testLoader):
+def validate(model, testLoader, logger):
     global best_acc
     model.eval()
 
@@ -107,7 +115,9 @@ def validate(model, testLoader):
             'Test Loss {:.4f}\tAccurary {:.2f}%\t\tTime {:.2f}s\n'
             .format(float(losses.avg), float(accurary.avg), (current_time - start_time))
         )
-    return accurary.avg
+    logger.writer.add_scalar("test/loss", losses.avg, epoch)
+    logger.writer.add_scalar("test/accuracy", accuracy.avg, epoch)
+    return losses.avg, accuracy.avg
 
 def generate_pr_cfg(model):
     cfg_len = {
@@ -159,9 +169,7 @@ def main():
     best_acc = 0.0
 
     model, pr_cfg = get_model(args,logger)
-
     optimizer = get_optimizer(args, model)
-
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.num_epochs)
 
     if args.resume == True:
@@ -170,13 +178,18 @@ def main():
     if len(args.gpus) != 1:
         model = nn.DataParallel(model, device_ids=args.gpus)
 
-    for epoch in range(start_epoch, args.num_epochs):
-        train(model, optimizer, loader.trainLoader, args, epoch)
-        test_acc = validate(model, loader.testLoader)
+    # for epoch in range(start_epoch, args.num_epochs):
+    epoch_bar = tqdm(range(start_epoch, args.num_epochs), position=0, leave=True)
+    for epoch in epoch_bar:
+        train_loss, train_acc = train(model, optimizer, loader.trainLoader, args, epoch)
+        test_loss, test_acc = validate(model, loader.testLoader)
+        logger.writer.add_scalar("train/loss", train_loss, epoch); logger.writer.add_scalar("train/accuracy", train_acc, epoch)
+        logger.writer.add_scalar("test/loss", test_loss, epoch); logger.writer.add_scalar("test/accuracy", test_acc, epoch)
         scheduler.step()
 
         is_best = best_acc < test_acc
         best_acc = max(best_acc, test_acc)
+        epoch_bar.set_description('Epoch {}/{} | Train {} {} | Val {} {} | Best {}'.format(epoch+1, args.num_epochs, train_loss, train_acc, test_loss, test_acc, best_acc))
 
         model_state_dict = model.module.state_dict() if len(args.gpus) > 1 else model.state_dict()
 
@@ -188,7 +201,6 @@ def main():
             'epoch': epoch + 1,
             'cfg': pr_cfg,
         }
-
         checkpoint.save_model(state, epoch + 1, is_best)
 
     logger.info('Best accurary: {:.3f}'.format(float(best_acc)))
@@ -196,25 +208,18 @@ def main():
 def resume(args, model, optimizer):
     if os.path.exists(args.job_dir+'/checkpoint/model_last.pt'):
         print("=> Loading checkpoint ")
-
         checkpoint = torch.load(args.job_dir+'/checkpoint/model_last.pt')
-
         start_epoch = checkpoint["epoch"]
-
         best_acc = checkpoint["best_acc"]
-
         model.load_state_dict(checkpoint["state_dict"])
-
         optimizer.load_state_dict(checkpoint["optimizer"])
-
         print(f"=> Loaded checkpoint (epoch) {checkpoint['epoch']})")
-
         return start_epoch, best_acc
     else:
         print(f"=> No checkpoint found at '{args.job_dir}' '/checkpoint/")
 
 
-def get_model(args,logger):
+def get_model(args, logger):
     pr_cfg = []
 
     print("=> Creating model '{}'".format(args.arch))
