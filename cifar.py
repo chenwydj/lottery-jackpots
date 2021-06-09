@@ -28,7 +28,7 @@ args.gpus = [i for i in range(len(args.gpus))]
 checkpoint = utils.checkpoint(args)
 now = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 # logger = utils.get_logger(os.path.join(args.job_dir, 'logger'+now+'.log'))
-args.save_dir = os.path.join(args.job_dir, 'logger'+now+'.log')
+args.save_dir = args.job_dir + "/orth"
 logger = prepare_logger(args)
 device = torch.device(f"cuda:{args.gpus[0]}") if torch.cuda.is_available() else 'cpu'
 
@@ -182,8 +182,8 @@ def main():
     # for epoch in range(start_epoch, args.num_epochs):
     epoch_bar = tqdm(range(start_epoch, args.num_epochs), position=0, leave=True)
     for epoch in epoch_bar:
-        train_loss, train_acc = train(model, optimizer, loader.trainLoader, args, epoch)
-        test_loss, test_acc = validate(model, loader.testLoader)
+        train_loss, train_acc = train(model, optimizer, loader.trainLoader, args, epoch, logger)
+        test_loss, test_acc = validate(model, loader.testLoader, logger)
         logger.writer.add_scalar("train/loss", train_loss, epoch); logger.writer.add_scalar("train/accuracy", train_acc, epoch)
         logger.writer.add_scalar("test/loss", test_loss, epoch); logger.writer.add_scalar("test/accuracy", test_acc, epoch)
         scheduler.step()
