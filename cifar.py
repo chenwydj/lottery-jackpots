@@ -80,10 +80,10 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         #     logger.info(
         #         'Epoch[{}] ({}/{}):\t'
         #         'Loss {:.4f}\t'
-        #         'Accurary {:.2f}%\t\t'
+        #         'Accuracy {:.2f}%\t\t'
         #         'Time {:.2f}s'.format(
         #             epoch, batch * args.train_batch_size, len(trainLoader.dataset),
-        #             float(losses.avg), float(accurary.avg), cost_time
+        #             float(losses.avg), float(accuracy.avg), cost_time
         #         )
         #     )
         #     start_time = current_time
@@ -108,11 +108,11 @@ def validate(model, testLoader, logger):
             predicted = utils.accuracy(outputs, targets)
             accuracy.update(predicted[0], inputs.size(0))
 
-        current_time = time.time()
-        logger.info(
-            'Test Loss {:.4f}\tAccurary {:.2f}%\t\tTime {:.2f}s\n'
-            .format(float(losses.avg), float(accurary.avg), (current_time - start_time))
-        )
+        # current_time = time.time()
+        # logger.info(
+        #     'Test Loss {:.4f}\tAccuracy {:.2f}%\t\tTime {:.2f}s\n'
+        #     .format(float(losses.avg), float(accuracy.avg), (current_time - start_time))
+        # )
     return float(losses.avg), float(accuracy.avg)
 
 def generate_pr_cfg(model):
@@ -200,7 +200,7 @@ def main():
         }
         checkpoint.save_model(state, epoch + 1, is_best)
 
-    logger.info('Best accurary: {:.3f}'.format(float(best_acc)))
+    logger.info('Best accuracy: {:.3f}'.format(float(best_acc)))
 
 def resume(args, model, optimizer):
     if os.path.exists(args.job_dir+'/checkpoint/model_last.pt'):
