@@ -168,7 +168,8 @@ def main():
     start_epoch = 0
     best_acc = 0.0
 
-    model, pr_cfg = get_model(args,logger)
+    prepare_seed(args.rand_seed)
+    model, pr_cfg = get_model(args, logger)
     optimizer = get_optimizer(args, model)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.num_epochs)
 

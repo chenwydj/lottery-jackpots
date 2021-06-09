@@ -8,9 +8,15 @@ from configs import parser as _parser
 
 parser = argparse.ArgumentParser(description='Lottery Jackpots Exsit in Pre-trained Model')
 
-parser.add_argument(    
-    "--config", 
-    help="Config file to use (see configs dir)", 
+parser.add_argument(
+    "--rand_seed",
+    help="random seed",
+    default=0
+)
+
+parser.add_argument(
+    "--config",
+    help="Config file to use (see configs dir)",
     default=None
 )
 
@@ -28,9 +34,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--warmup_length", 
-    default=0, 
-    type=int, 
+    "--warmup_length",
+    default=0,
+    type=int,
     help="Number of warmup iterations"
 )
 
@@ -125,41 +131,41 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--optimizer", 
-    help="Which optimizer to use", 
+    "--optimizer",
+    help="Which optimizer to use",
     default="sgd"
 )
 
 parser.add_argument(
-    "--no_bn_decay", 
-    action="store_true", 
-    default=False, 
+    "--no_bn_decay",
+    action="store_true",
+    default=False,
     help="No batchnorm decay"
 )
 
 parser.add_argument(
-    "--lr_policy", 
-    default="cos", 
+    "--lr_policy",
+    default="cos",
     help="Policy for the learning rate."
 )
 
 parser.add_argument(
-    "--lr_adjust", 
-    default=30, 
-    type=int, 
+    "--lr_adjust",
+    default=30,
+    type=int,
     help="Interval to drop lr"
 )
 
 parser.add_argument(
-    "--lr_gamma", 
-    default=0.1, 
-    type=float, 
+    "--lr_gamma",
+    default=0.1,
+    type=float,
     help="Multistep multiplier"
 )
 parser.add_argument(
-    "--prune_rate", 
-    default=0.9, 
-    type=float, 
+    "--prune_rate",
+    default=0.9,
+    type=float,
     help="Prune rate"
 )
 
@@ -184,9 +190,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--conv_type", 
-    type=str, 
-    default=None, 
+    "--conv_type",
+    type=str,
+    default=None,
     help="Conv type of conv layer. Default: PretrainConv. optional: DenseConv"
 )
 
@@ -198,16 +204,16 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--layerwise", 
-    type=str, 
-    default="l1", 
+    "--layerwise",
+    type=str,
+    default="l1",
     help="Layerwise pruning rate. Default: l1. optional: uniform"
 )
 
 parser.add_argument(
-    "--bn_type", 
-    type=str, 
-    default="LearnedBatchNorm", 
+    "--bn_type",
+    type=str,
+    default="LearnedBatchNorm",
     help="BN type of conv layer. Optional: NonAffineBatchNorm"
 )
 
