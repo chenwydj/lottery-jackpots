@@ -98,11 +98,14 @@ class Logger(object):
         if self.writer is not None:
             self.writer.close()
 
+    def info(self, string):
+        self.log(string)
+
     def log(self, string, save=True, stdout=False):
         if stdout:
             sys.stdout.write(string); sys.stdout.flush()
         else:
-            print (string)
+            print(string)
         if save:
             self.logger_file.write('{:}\n'.format(string))
             self.logger_file.flush()
