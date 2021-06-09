@@ -74,19 +74,19 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         prec1 = utils.accuracy(output, targets)
         accurary.update(prec1[0], inputs.size(0))
 
-        if batch % print_freq == 0 and batch != 0:
-            current_time = time.time()
-            cost_time = current_time - start_time
-            logger.info(
-                'Epoch[{}] ({}/{}):\t'
-                'Loss {:.4f}\t'
-                'Accurary {:.2f}%\t\t'
-                'Time {:.2f}s'.format(
-                    epoch, batch * args.train_batch_size, len(trainLoader.dataset),
-                    float(losses.avg), float(accurary.avg), cost_time
-                )
-            )
-            start_time = current_time
+        # if batch % print_freq == 0 and batch != 0:
+        #     current_time = time.time()
+        #     cost_time = current_time - start_time
+        #     logger.info(
+        #         'Epoch[{}] ({}/{}):\t'
+        #         'Loss {:.4f}\t'
+        #         'Accurary {:.2f}%\t\t'
+        #         'Time {:.2f}s'.format(
+        #             epoch, batch * args.train_batch_size, len(trainLoader.dataset),
+        #             float(losses.avg), float(accurary.avg), cost_time
+        #         )
+        #     )
+        #     start_time = current_time
     logger.writer.add_scalar("train/loss", losses.avg, epoch)
     logger.writer.add_scalar("train/accuracy", accuracy.avg, epoch)
     return losses.avg, accuracy.avg
@@ -110,11 +110,11 @@ def validate(model, testLoader, logger):
             predicted = utils.accuracy(outputs, targets)
             accurary.update(predicted[0], inputs.size(0))
 
-        current_time = time.time()
-        logger.info(
-            'Test Loss {:.4f}\tAccurary {:.2f}%\t\tTime {:.2f}s\n'
-            .format(float(losses.avg), float(accurary.avg), (current_time - start_time))
-        )
+        # current_time = time.time()
+        # logger.info(
+        #     'Test Loss {:.4f}\tAccurary {:.2f}%\t\tTime {:.2f}s\n'
+        #     .format(float(losses.avg), float(accurary.avg), (current_time - start_time))
+        # )
     logger.writer.add_scalar("test/loss", losses.avg, epoch)
     logger.writer.add_scalar("test/accuracy", accuracy.avg, epoch)
     return losses.avg, accuracy.avg
