@@ -62,11 +62,13 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         # output = model(inputs)
         #adjust_learning_rate(optimizer, epoch, batch, print_freq, args)
         # loss = loss_func(output, targets)
+        # loss.backward()
 
         # # Orth Reg
         # with torch.no_grad():
         #     output = model(inputs)
         # loss = l2_reg_ortho(model)
+        # loss.backward()
 
         # NTK cond
         with torch.no_grad():
@@ -74,7 +76,6 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         unfreeze_model_weights(model)
         loss = get_ntk(model, inputs, targets, num_classes=10)
 
-        loss.backward()
         losses.update(loss.item(), inputs.size(0))
         optimizer.step()
 

@@ -1,5 +1,6 @@
 import torch
 from torch.nn.functional import normalize
+from torch import autograd
 from pdb import set_trace as bp
 
 
@@ -55,14 +56,16 @@ def get_ntk(network, Xtrain, Ytrain, Xtest=None, Ytest=None, criterion=torch.nn.
     if isinstance(logit, tuple):
         logit = logit[1]  # 201 networks: return features and logits
     for _idx in range(len(inputs)):
-        logit[_idx:_idx+1].backward(torch.ones_like(logit[_idx:_idx+1]), retain_graph=True)
-        # loss = criterion(logit[_idx:_idx+1], targets[_idx:_idx+1])
-        # loss.backward(retain_graph=True)
-        grad = []
-        for name, W in network.named_parameters():
-            if 'weight' in name and W.grad is not None:
-                grad.append(W.grad.view(-1))
-        grads_x.append(torch.cat(grad, -1))
+        # logit[_idx:_idx+1].backward(torch.ones_like(logit[_idx:_idx+1]), retain_graph=True)
+        # grad = []
+        # for name, W in network.named_parameters():
+        #     if 'weight' in name and W.grad is not None:
+        #         grad.append(W.grad.view(-1))
+        # grads_x.append(torch.cat(grad, -1))
+
+        grads = autograd.grad(logit[_idx:_idx+1].sum(), [ module.weight for name, module in network.named_modules() if hasattr(module, "sparse_weight") ], create_graph=True)
+        grads_x.append(grads)
+
         network.zero_grad()
         torch.cuda.empty_cache()
     targets_x_onehot_mean = torch.cat(targets_x_onehot_mean, 0)
@@ -70,7 +73,9 @@ def get_ntk(network, Xtrain, Ytrain, Xtest=None, Ytest=None, criterion=torch.nn.
     grads_x = torch.stack(grads_x, 0)
     ntk = torch.einsum('nc,mc->nm', [grads_x, grads_x])
     eigenvalues, _ = torch.symeig(ntk)  # ascending
-    cond_x = eigenvalues[-1] / eigenvalues[0]
+    # cond_x = eigenvalues[-1] / eigenvalues[0]
+    cond_x = eigenvalues[-1] / eigenvalues[len(eigenvalues)//2]
+    autograd.backward(cond_x, [ module.mask for name, module in network.named_modules() if hasattr(module, "sparse_weight") ], create_graph=True)
     # Val / Test set
     if Xtest is not None:
         inputs = Xtest.cuda(device=device, non_blocking=True)
@@ -83,9 +88,9 @@ def get_ntk(network, Xtrain, Ytrain, Xtest=None, Ytest=None, criterion=torch.nn.
         if isinstance(logit, tuple):
             logit = logit[1]  # 201 networks: return features and logits
         for _idx in range(len(inputs)):
+            # TODO use autograd?
             logit[_idx:_idx+1].backward(torch.ones_like(logit[_idx:_idx+1]), retain_graph=True)
-            # loss = criterion(logit[_idx:_idx+1], targets[_idx:_idx+1])
-            # loss.backward(retain_graph=True)
+            grad = []
             for name, W in network.named_parameters():
                 if 'weight' in name and W.grad is not None:
                     grad.append(W.grad.view(-1))
