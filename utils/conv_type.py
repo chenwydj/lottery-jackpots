@@ -67,6 +67,7 @@ class PretrainConv(nn.Conv2d):
         m = self.mask.detach().cpu()
         m = m.view(-1)
         _, indice = torch.topk(torch.abs(w), int(w.size(0)*prune_rate), largest=False)
+        # TODO
         # m[indice] = 0.95
         m[indice] = 0.99
         self.mask = nn.Parameter(m.view(self.weight.shape))

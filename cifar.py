@@ -16,7 +16,7 @@ from utils.common import *
 from importlib import import_module
 
 from utils.conv_type import *
-from utils.orth_reg import l2_reg_ortho
+from utils.indicators import l2_reg_ortho, get_ntk
 from utils.logger import prepare_logger, prepare_seed
 
 import models
@@ -57,15 +57,21 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
 
+        # TODO
         # supervised
         # output = model(inputs)
         #adjust_learning_rate(optimizer, epoch, batch, print_freq, args)
         # loss = loss_func(output, targets)
 
-        # Orth Reg
+        # # Orth Reg
+        # with torch.no_grad():
+        #     output = model(inputs)
+        # loss = l2_reg_ortho(model)
+
+        # NTK cond
         with torch.no_grad():
             output = model(inputs)
-        loss = l2_reg_ortho(model)
+        loss = get_ntk(model, inputs, targets, num_classes=10)
 
         loss.backward()
         losses.update(loss.item(), inputs.size(0))

@@ -5,7 +5,7 @@ pretrained_model: ./pre-train/resnet32_cifar10.pt
 # ===== Dataset ===== #
 data_path: ../datasets/Cifar
 data_set: cifar10
-job_dir: ./experiment/resnet32_cifar10/90sparsity30epoch
+job_dir: ./experiment/resnet32_cifar10/90sparsity30epoch/ntk
 
 # ===== Learning Rate Policy ======== #
 optimizer: sgd
