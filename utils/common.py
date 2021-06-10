@@ -175,8 +175,16 @@ def freeze_model_weights(model):
                     m.bias.grad = None
 
 
-def set_model_prune_rate(model, pr_cfg, logger):
+def unfreeze_model_weights(model):
+    print("=> Unfreezing model weights")
+    for n, m in model.named_modules():
+        if hasattr(m, "weight") and m.weight is not None:
+            m.weight.requires_grad = True
+            if hasattr(m, "bias") and m.bias is not None:
+                m.bias.requires_grad = True
 
+
+def set_model_prune_rate(model, pr_cfg, logger):
     logger.info(f"==> Setting prune rate of network to {pr_cfg}")
     i = 0
     for n, m in model.named_modules():

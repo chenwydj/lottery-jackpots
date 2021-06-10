@@ -71,6 +71,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         # NTK cond
         with torch.no_grad():
             output = model(inputs)
+        unfreeze_model_weights(model)
         loss = get_ntk(model, inputs, targets, num_classes=10)
 
         loss.backward()
