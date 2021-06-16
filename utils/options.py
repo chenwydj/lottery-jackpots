@@ -3,6 +3,7 @@ import ast
 import os
 import sys
 import yaml
+from datetime import datetime
 
 from configs import parser as _parser
 
@@ -67,6 +68,14 @@ parser.add_argument(
 	type=str,
 	default='/home/userhome/datasets/cifar',
 	help='The dictionary where the input is stored. default:',
+)
+
+
+parser.add_argument(
+    '--exp_name',
+    type=str,
+    default='',
+    help='name of experiment'
 )
 
 parser.add_argument(
@@ -217,10 +226,16 @@ parser.add_argument(
     help="BN type of conv layer. Optional: NonAffineBatchNorm"
 )
 
+
 parser.add_argument(
     '--debug',
     action='store_true',
     help='input to open debug state')
+
+parser.add_argument(
+    '--teacher',
+    action='store_true',
+    help='create and use dense model as teacher')
 
 
 args = parser.parse_args()
@@ -239,3 +254,6 @@ for v in override_args:
 
 print(f"==> Reading YAML config from {args.config}")
 args.__dict__.update(loaded_yaml)
+
+timestamp = datetime.now().strftime(r'%m%d_%H%M%S')
+args.job_dir = os.path.join(args.job_dir, args.exp_name, timestamp)

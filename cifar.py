@@ -16,7 +16,7 @@ from utils.common import *
 from importlib import import_module
 
 from utils.conv_type import *
-from utils.indicators import l2_reg_ortho, get_ntk
+from utils.indicators import l2_reg_ortho, get_ntk, ntk_differentiable
 from utils.logger import prepare_logger, prepare_seed
 
 import models
@@ -45,7 +45,7 @@ elif args.data_set == 'cifar100':
     loader = cifar100.Data(args)
 
 
-def train(model, optimizer, trainLoader, args, epoch, logger):
+def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
 
     model.train()
     losses = utils.AverageMeter(':.4e')
@@ -54,8 +54,10 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
     start_time = time.time()
     for batch, (inputs, targets) in enumerate(trainLoader):
 
+        loss = 0
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
+        model.zero_grad()
 
         # TODO
         # supervised
@@ -71,10 +73,27 @@ def train(model, optimizer, trainLoader, args, epoch, logger):
         # loss.backward()
 
         # NTK cond
+        # with torch.no_grad():
+        #     output = model(inputs)
+        # unfreeze_model_weights(model)
+        # loss = get_ntk(model, inputs, targets, num_classes=10)
+        # loss.backward()
+
+        # ntk difference
+        # unfreeze_model_weights(model)
+        # ntk_dense = ntk_differentiable(model_dense, Xtrain, train_mode=True, need_graph=False)
+        # ntk = ntk_differentiable(model, Xtrain, train_mode=True, need_graph=True)
+        # delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
+        # delta_ntk.backward()
+        # loss += delta_nkt
+        # dense model output
         with torch.no_grad():
-            output = model(inputs)
+            output_dense = model_dense(inputs)
         unfreeze_model_weights(model)
-        loss = get_ntk(model, inputs, targets, num_classes=10)
+        output = model(inputs)
+        delta_output = nn.functional.mse_loss(output, output_dense)
+        delta_output.backward()
+        loss += delta_output
 
         losses.update(loss.item(), inputs.size(0))
         optimizer.step()
@@ -174,6 +193,8 @@ def main():
 
     prepare_seed(args.rand_seed)
     model, pr_cfg = get_model(args, logger)
+    if args.teacher:
+        model_dense, _ = get_model(args, logger, sparse=False)
     optimizer = get_optimizer(args, model)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.num_epochs)
 
@@ -186,7 +207,7 @@ def main():
     # for epoch in range(start_epoch, args.num_epochs):
     epoch_bar = tqdm(range(start_epoch, args.num_epochs), position=0, leave=True)
     for epoch in epoch_bar:
-        train_loss, train_acc = train(model, optimizer, loader.trainLoader, args, epoch, logger)
+        train_loss, train_acc = train(model, optimizer, loader.trainLoader, args, epoch, logger, model_dense=model_dense if args.teacher else None)
         test_loss, test_acc = validate(model, loader.testLoader, logger)
         logger.writer.add_scalar("train/loss", train_loss, epoch); logger.writer.add_scalar("train/accuracy", train_acc, epoch)
         logger.writer.add_scalar("test/loss", test_loss, epoch); logger.writer.add_scalar("test/accuracy", test_acc, epoch)
@@ -224,7 +245,7 @@ def resume(args, model, optimizer):
         print(f"=> No checkpoint found at '{args.job_dir}' '/checkpoint/")
 
 
-def get_model(args, logger):
+def get_model(args, logger, sparse=True):
     pr_cfg = []
 
     print("=> Creating model '{}'".format(args.arch))
@@ -232,9 +253,10 @@ def get_model(args, logger):
     ckpt = torch.load(args.pretrained_model, map_location=device)
     model.load_state_dict(ckpt['state_dict'],strict=False)
 
-    #applying sparsity to the network
+    # applying sparsity to the network
     pr_cfg = generate_pr_cfg(model)
-    set_model_prune_rate(model, pr_cfg, logger)
+    if sparse:
+        set_model_prune_rate(model, pr_cfg, logger)
 
     if args.freeze_weights:
         freeze_model_weights(model)

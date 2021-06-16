@@ -41,6 +41,7 @@ class PretrainConv(nn.Conv2d):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mask = nn.Parameter(torch.ones(self.weight.shape))
+        self.prune_rate = 0
 
     def forward(self, x):
         # mask = GetMask.apply(self.clamped_masks, self.prune_rate)

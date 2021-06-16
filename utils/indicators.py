@@ -63,6 +63,7 @@ def get_ntk(network, Xtrain, Ytrain, Xtest=None, Ytest=None, criterion=torch.nn.
         #         grad.append(W.grad.view(-1))
         # grads_x.append(torch.cat(grad, -1))
 
+        # TODO only grad on weights, not masks
         grads = autograd.grad(logit[_idx:_idx+1].sum(), [ module.weight for name, module in network.named_modules() if hasattr(module, "sparse_weight") ], create_graph=True)
         grads_x.append(grads)
 
@@ -75,6 +76,7 @@ def get_ntk(network, Xtrain, Ytrain, Xtest=None, Ytest=None, criterion=torch.nn.
     eigenvalues, _ = torch.symeig(ntk)  # ascending
     # cond_x = eigenvalues[-1] / eigenvalues[0]
     cond_x = eigenvalues[-1] / eigenvalues[len(eigenvalues)//2]
+    # TODO only grad on weights, not masks
     autograd.backward(cond_x, [ module.mask for name, module in network.named_modules() if hasattr(module, "sparse_weight") ], create_graph=True)
     # Val / Test set
     if Xtest is not None:
@@ -113,3 +115,33 @@ def get_ntk(network, Xtrain, Ytrain, Xtest=None, Ytest=None, criterion=torch.nn.
         return cond_x
     else:
         return cond_x, prediction_mse
+
+
+def ntk_differentiable(network, Xtrain, train_mode=True, need_graph=True):
+    # XXX return one NTK per mini-batch in loader
+    device = torch.cuda.current_device()
+    ntks = []
+    if train_mode:
+        network.train()
+    else:
+        network.eval()
+    ######
+    grads = []
+    inputs = Xtrain.cuda(device=device, non_blocking=True)
+    for _idx in range(len(inputs)):
+        # TODO only grad on weights, not masks
+        _gradients = autograd.grad(outputs=network(inputs[_idx:_idx+1]).sum(), inputs=[ module.mask for name, module in network.named_modules()
+                                    if hasattr(module, "sparse_weight") ], retain_graph=need_graph, create_graph=need_graph)
+        grad = [] # grad of all weights for this sample
+        for _grad in _gradients:
+            if need_graph:
+                grad.append(_grad.view(-1))
+            else:
+                grad.append(_grad.view(-1).detach())
+        grads.append(torch.cat(grad, -1)) # grad of all weights for this sample
+        if not need_graph:
+            network.zero_grad()
+            torch.cuda.empty_cache()
+    grads = torch.stack(grads, 0) # #samples * #params
+    ntk = torch.einsum('nc,mc->nm', [grads, grads])
+    return ntk
