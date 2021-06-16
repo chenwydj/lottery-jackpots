@@ -55,9 +55,9 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
     accuracy = utils.AverageMeter(':6.3f')
     print_freq = len(trainLoader.dataset) // args.train_batch_size // 10
     start_time = time.time()
-    pbar = tqdm(enumerate(trainLoader), position=0, leave=True)
+    pbar = tqdm(trainLoader, position=0, leave=True)
     # for batch, (inputs, targets) in enumerate(trainLoader):
-    for batch, (inputs, targets) in pbar:
+    for batch, (inputs, targets) in enumerate(pbar):
         loss = 0
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
