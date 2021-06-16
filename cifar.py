@@ -63,19 +63,19 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
         model.zero_grad()
 
         # TODO
-        # supervised
-        output = model(inputs)
-        # adjust_learning_rate(optimizer, epoch, batch, print_freq, args)
-        loss = loss_func(output, targets)
-        loss.backward()
+        ### supervised
+        # output = model(inputs)
+        # # adjust_learning_rate(optimizer, epoch, batch, print_freq, args)
+        # loss = loss_func(output, targets)
+        # loss.backward()
 
-        # # Orth Reg
+        ### Orth Reg
         # with torch.no_grad():
         #     output = model(inputs)
         # loss = l2_reg_ortho(model)
         # loss.backward()
 
-        # NTK cond
+        ### NTK cond
         # with torch.no_grad():
         #     output = model(inputs)
         # unfreeze_model_weights(model)
@@ -83,14 +83,14 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
         # loss.backward()
 
         #### ntk difference
-        # with torch.no_grad():
-        #     output = model(inputs)
-        # unfreeze_model_weights(model)
-        # ntk_dense = ntk_differentiable(model_dense, Xtrain, train_mode=True, need_graph=False)
-        # ntk = ntk_differentiable(model, Xtrain, train_mode=True, need_graph=True)
-        # delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
-        # delta_ntk.backward()
-        # loss += delta_nkt
+        with torch.no_grad():
+            output = model(inputs)
+        unfreeze_model_weights(model)
+        ntk_dense = ntk_differentiable(model_dense, inputs, train_mode=True, need_graph=False)
+        ntk = ntk_differentiable(model, Xtrain, train_mode=True, need_graph=True)
+        delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
+        delta_ntk.backward()
+        loss += delta_nkt
         #### dense model output
         # with torch.no_grad():
         #     output_dense = model_dense(inputs)
