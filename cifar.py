@@ -90,7 +90,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
         ntk = ntk_differentiable(model, inputs, train_mode=True, need_graph=True)
         delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
         delta_ntk.backward()
-        loss += delta_nkt
+        loss += delta_ntk
         #### dense model output
         # with torch.no_grad():
         #     output_dense = model_dense(inputs)
