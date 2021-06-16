@@ -55,8 +55,9 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
     accuracy = utils.AverageMeter(':6.3f')
     print_freq = len(trainLoader.dataset) // args.train_batch_size // 10
     start_time = time.time()
-    for batch, (inputs, targets) in enumerate(trainLoader):
-
+    pbar = tqdm(enumerate(trainLoader), position=0, leave=True)
+    # for batch, (inputs, targets) in enumerate(trainLoader):
+    for batch, (inputs, targets) in pbar:
         loss = 0
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
@@ -209,10 +210,10 @@ def main():
     if len(args.gpus) != 1:
         model = nn.DataParallel(model, device_ids=args.gpus)
 
-    print("<< ============== JOB (PID = %d) %s ============== >>"%(PID, args.save_dir))
     # for epoch in range(start_epoch, args.num_epochs):
     epoch_bar = tqdm(range(start_epoch, args.num_epochs), position=0, leave=True)
     for epoch in epoch_bar:
+        print("<< ============== JOB (PID = %d) %s ============== >>"%(PID, args.save_dir))
         train_loss, train_acc = train(model, optimizer, loader.trainLoader, args, epoch, logger, model_dense=model_dense if args.teacher else None)
         test_loss, test_acc = validate(model, loader.testLoader, logger)
         logger.writer.add_scalar("train/loss", train_loss, epoch); logger.writer.add_scalar("train/accuracy", train_acc, epoch)
