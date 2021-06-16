@@ -89,7 +89,8 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
         unfreeze_model_weights(model)
         ntk_dense = ntk_differentiable(model_dense, inputs, train_mode=True, need_graph=False)
         ntk = ntk_differentiable(model, inputs, train_mode=True, need_graph=True)
-        delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
+        delta_ntk = 1 - torch.trace(torch.matmul(ntk, ntk_dense.T)) / torch.trace(torch.matmul(ntk, ntk.T)).sqrt() / torch.trace(torch.matmul(ntk_dense, ntk_dense.T)).sqrt()
+        # delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
         delta_ntk.backward()
         loss += delta_ntk
         #### dense model output
