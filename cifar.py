@@ -45,6 +45,9 @@ elif args.data_set == 'cifar100':
     loader = cifar100.Data(args)
 
 
+PID = os.getpid()
+
+
 def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
 
     model.train()
@@ -204,6 +207,7 @@ def main():
     if len(args.gpus) != 1:
         model = nn.DataParallel(model, device_ids=args.gpus)
 
+    print("<< ============== JOB (PID = %d) %s ============== >>"%(PID, args.save_dir))
     # for epoch in range(start_epoch, args.num_epochs):
     epoch_bar = tqdm(range(start_epoch, args.num_epochs), position=0, leave=True)
     for epoch in epoch_bar:
