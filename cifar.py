@@ -82,21 +82,23 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
         # loss = get_ntk(model, inputs, targets, num_classes=10)
         # loss.backward()
 
-        # ntk difference
-        # unfreeze_model_weights(model)
-        # ntk_dense = ntk_differentiable(model_dense, Xtrain, train_mode=True, need_graph=False)
-        # ntk = ntk_differentiable(model, Xtrain, train_mode=True, need_graph=True)
-        # delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
-        # delta_ntk.backward()
-        # loss += delta_nkt
-        # dense model output
+        #### ntk difference
         with torch.no_grad():
-            output_dense = model_dense(inputs)
+            output = model(inputs)
         unfreeze_model_weights(model)
-        output = model(inputs)
-        delta_output = nn.functional.mse_loss(output, output_dense)
-        delta_output.backward()
-        loss += delta_output
+        ntk_dense = ntk_differentiable(model_dense, Xtrain, train_mode=True, need_graph=False)
+        ntk = ntk_differentiable(model, Xtrain, train_mode=True, need_graph=True)
+        delta_ntk = nn.functional.mse_loss(ntk, ntk_dense) # TODO reweighting lambda
+        delta_ntk.backward()
+        loss += delta_nkt
+        #### dense model output
+        # with torch.no_grad():
+        #     output_dense = model_dense(inputs)
+        # unfreeze_model_weights(model)
+        # output = model(inputs)
+        # delta_output = nn.functional.mse_loss(output, output_dense)
+        # delta_output.backward()
+        # loss += delta_output
 
         losses.update(loss.item(), inputs.size(0))
         optimizer.step()
