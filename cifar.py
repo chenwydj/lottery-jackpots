@@ -107,7 +107,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
         prec1 = utils.accuracy(output, targets)
         accuracy.update(prec1[0], inputs.size(0))
 
-        epoch_bar.set_description('Loss {} | Accuracy {}'.format(float(losses.avg), float(accuracy.avg)))
+        pbar.set_description('Loss {} | Accuracy {}'.format(float(losses.avg), float(accuracy.avg)))
 
         # if batch % print_freq == 0 and batch != 0:
         #     current_time = time.time()
