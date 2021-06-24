@@ -227,14 +227,16 @@ def main():
     for epoch in epoch_bar:
         print("<< ============== JOB (PID = %d) %s ============== >>"%(PID, args.save_dir))
         train_loss, train_acc = train(model, optimizer, loader.trainLoader, args, epoch, logger, model_dense=model_dense if args.teacher else None)
-        test_loss, test_acc = validate(model, loader.testLoader, logger)
         logger.writer.add_scalar("train/loss", train_loss, epoch); logger.writer.add_scalar("train/accuracy", train_acc, epoch)
-        logger.writer.add_scalar("test/loss", test_loss, epoch); logger.writer.add_scalar("test/accuracy", test_acc, epoch)
+        epoch_bar.set_description('Epoch {}/{} | Train {} {}'.format(epoch+1, args.num_epochs, train_loss, train_acc))
+        if args.pretrained_model != '':
+            # TODO only evaluate when using pretrained checkpoint
+            test_loss, test_acc = validate(model, loader.testLoader, logger)
+            logger.writer.add_scalar("test/loss", test_loss, epoch); logger.writer.add_scalar("test/accuracy", test_acc, epoch)
+            is_best = best_acc < test_acc
+            best_acc = max(best_acc, test_acc)
+            epoch_bar.set_description('Epoch {}/{} | Train {} {} | Val {} {} | Best {}'.format(epoch+1, args.num_epochs, train_loss, train_acc, test_loss, test_acc, best_acc))
         scheduler.step()
-
-        is_best = best_acc < test_acc
-        best_acc = max(best_acc, test_acc)
-        epoch_bar.set_description('Epoch {}/{} | Train {} {} | Val {} {} | Best {}'.format(epoch+1, args.num_epochs, train_loss, train_acc, test_loss, test_acc, best_acc))
 
         model_state_dict = model.module.state_dict() if len(args.gpus) > 1 else model.state_dict()
 
