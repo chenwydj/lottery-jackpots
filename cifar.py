@@ -105,7 +105,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
         #### ntk condition number
         unfreeze_model_weights(model)
         ntk = ntk_differentiable(model, inputs, train_mode=True, need_graph=True)
-        eigenvalues, _ = torch.symeig(ntk)
+        eigenvalues, _ = torch.symeig(ntk, eigenvectors=True)
         cond = eigenvalues[-1] / eigenvalues[0]
         cond.backward()
         loss += cond
