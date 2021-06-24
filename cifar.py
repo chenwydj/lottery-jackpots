@@ -210,9 +210,9 @@ def main():
     best_acc = 0.0
 
     prepare_seed(args.rand_seed)
-    model, pr_cfg = get_model(args, logger, pretrained!='')
+    model, pr_cfg = get_model(args, logger, pretrained=args.pretrained_model!='')
     if args.teacher:
-        model_dense, _ = get_model(args, logger, pretrained!='', sparse=False)
+        model_dense, _ = get_model(args, logger, pretrained=args.pretrained_model!='', sparse=False)
     optimizer = get_optimizer(args, model)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.num_epochs)
 
