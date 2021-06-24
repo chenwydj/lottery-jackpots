@@ -58,7 +58,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
     pbar = tqdm(trainLoader, position=0, leave=True)
     # for batch, (inputs, targets) in enumerate(trainLoader):
     for batch, (inputs, targets) in enumerate(pbar):
-        loss = 0, output = None
+        loss = 0; output = None
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
         model.zero_grad()
