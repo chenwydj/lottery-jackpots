@@ -256,7 +256,7 @@ print(f"==> Reading YAML config from {args.config}")
 args.__dict__.update(loaded_yaml)
 
 timestamp = datetime.now().strftime(r'%m%d_%H%M%S')
-args.job_dir = os.path.join(args.job_dir, args.exp_name, "bs{bs:d}_lr{lr:.2f}".format(
+args.job_dir = os.path.join(args.job_dir, args.exp_name, "bs{bs:d}_lr{lr:.6f}".format(
     bs=args.train_batch_size,
     lr=args.lr
 ), timestamp)
