@@ -42,32 +42,32 @@ parser.add_argument(
 )
 
 parser.add_argument(
-	'--gpus',
-	type=int,
-	nargs='+',
-	default=0,
-	help='Select gpu_id to use. default:[0]',
+    '--gpus',
+    type=int,
+    nargs='+',
+    default=0,
+    help='Select gpu_id to use. default:[0]',
 )
 
 parser.add_argument(
-	'--pretrained_model',
-	type=str,
-	default='/pre-train/vgg19_cifar10.pt',
-	help='Path of the pre-trained model',
+    '--pretrained_model',
+    type=str,
+    default='',
+    help='Path of the pre-trained model',
 )
 
 parser.add_argument(
-	'--data_set',
-	type=str,
-	default='cifar10',
-	help='Select dataset to train. default:cifar10',
+    '--data_set',
+    type=str,
+    default='cifar10',
+    help='Select dataset to train. default:cifar10',
 )
 
 parser.add_argument(
-	'--data_path',
-	type=str,
-	default='/home/userhome/datasets/cifar',
-	help='The dictionary where the input is stored. default:',
+    '--data_path',
+    type=str,
+    default='/home/userhome/datasets/cifar',
+    help='The dictionary where the input is stored. default:',
 )
 
 
