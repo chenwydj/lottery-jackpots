@@ -54,12 +54,17 @@ class PretrainConv(nn.Conv2d):
 
     @property
     def sparse_weight(self):
-        mask = GetMask.apply(self.clamped_masks, self.prune_rate)
-        return mask * self.weight
+        # mask = GetMask.apply(self.clamped_masks, self.prune_rate)
+        # return mask * self.weight
+        return self.true_masks * self.weight
 
     @property
     def clamped_masks(self):
         return self.mask.abs()
+
+    @property
+    def true_masks(self):
+        return GetMask.apply(self.clamped_masks, self.prune_rate)
 
     def set_prune_rate(self, prune_rate):
         self.prune_rate = prune_rate

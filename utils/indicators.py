@@ -128,16 +128,19 @@ def ntk_differentiable(network, Xtrain, train_mode=True, need_graph=True):
     ######
     grads = []
     inputs = Xtrain.cuda(device=device, non_blocking=True)
+    masks = [ module.true_masks for name, module in network.named_modules() if hasattr(module, "sparse_weight") ]
     for _idx in range(len(inputs)):
         # TODO only grad on weights, not masks
-        _gradients = autograd.grad(outputs=network(inputs[_idx:_idx+1]).sum(), inputs=[ module.mask for name, module in network.named_modules()
+        _gradients = autograd.grad(outputs=network(inputs[_idx:_idx+1]).sum(), inputs=[ module.weight for name, module in network.named_modules()
                                     if hasattr(module, "sparse_weight") ], retain_graph=need_graph, create_graph=need_graph)
         grad = [] # grad of all weights for this sample
-        for _grad in _gradients:
+        for _grad, mask in zip(_gradients, masks):
             if need_graph:
-                grad.append(_grad.view(-1))
+                # grad.append(_grad.view(-1))
+                grad.append((_grad * mask.detach()).view(-1))
             else:
-                grad.append(_grad.view(-1).detach())
+                # grad.append(_grad.view(-1).detach())
+                grad.append((_grad * mask.detach()).view(-1).detach())
         grads.append(torch.cat(grad, -1)) # grad of all weights for this sample
         if not need_graph:
             network.zero_grad()
