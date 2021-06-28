@@ -20,6 +20,7 @@ from utils.indicators import l2_reg_ortho, get_ntk, ntk_differentiable
 from utils.logger import prepare_logger, prepare_seed
 
 import models
+import warnings
 from pdb import set_trace as bp
 
 visible_gpus_str = ','.join(str(i) for i in args.gpus)
@@ -58,6 +59,7 @@ def train(model, optimizer, trainLoader, args, epoch, logger, model_dense=None):
     pbar = tqdm(trainLoader, position=0, leave=True)
     # for batch, (inputs, targets) in enumerate(trainLoader):
     for batch, (inputs, targets) in enumerate(pbar):
+        if batch > 10: break # TODO force end epoch to save checkpoint
         loss = 0; output = None
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
@@ -210,9 +212,9 @@ def main():
     best_acc = 0.0
 
     prepare_seed(args.rand_seed)
-    model, pr_cfg = get_model(args, logger, pretrained=args.pretrained_model!='')
+    model, pr_cfg = get_model(args, logger)
     if args.teacher:
-        model_dense, _ = get_model(args, logger, pretrained=args.pretrained_model!='', sparse=False)
+        model_dense, _ = get_model(args, logger, sparse=False)
     optimizer = get_optimizer(args, model)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.num_epochs)
 
@@ -266,14 +268,16 @@ def resume(args, model, optimizer):
         print(f"=> No checkpoint found at '{args.job_dir}' '/checkpoint/")
 
 
-def get_model(args, logger, pretrained=True, sparse=True):
+def get_model(args, logger, sparse=True):
     pr_cfg = []
 
     print("=> Creating model '{}'".format(args.arch))
     model = models.__dict__[args.arch]().to(device)
-    if pretrained:
+    try:
         ckpt = torch.load(args.pretrained_model, map_location=device)
         model.load_state_dict(ckpt['state_dict'], strict=False)
+    except Exception as e:
+        warnings.warn("Fail to load checkpoint: {}".format(e))
 
     # applying sparsity to the network
     pr_cfg = generate_pr_cfg(model)

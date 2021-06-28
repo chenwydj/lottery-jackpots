@@ -8,6 +8,7 @@ import math
 
 from utils.options import args as parser_args
 import numpy as np
+from pdb import set_trace as bp
 
 LearnedBatchNorm = nn.BatchNorm2d
 
@@ -21,15 +22,22 @@ DenseConv = nn.Conv2d
 class GetMask(autograd.Function):
     @staticmethod
     def forward(ctx, mask, prune_rate):
-        out = mask.clone()
+        # out = mask.clone()
         _, idx = mask.flatten().sort()
         j = int(prune_rate * mask.numel())
 
-        # flat_out and out access the same memory.
-        flat_out = out.flatten()
-        flat_out[idx[:j]] = 0
-        flat_out[idx[j:]] = 1
-        return out
+        # # flat_out and out access the same memory.
+        # flat_out = out.flatten()
+        # # flat_out[idx[:j]] = 0
+        # # flat_out[idx[j:]] = 1
+        # flat_out[idx[:j]] = (0 - flat_out[idx[:j]]).detach() + flat_out[idx[:j]]
+        # flat_out[idx[j:]] = (1 - flat_out[idx[j:]]).detach() + flat_out[idx[j:]]
+        # return out
+
+        mask_hard = torch.zeros_like(mask.view(-1))
+        mask_hard[idx[j:]] = 1
+        mask_hard = (mask_hard - mask.view(-1)).detach() + mask.view(-1)
+        return mask_hard.view(mask.shape)
 
     @staticmethod
     def backward(ctx, g):
@@ -48,7 +56,8 @@ class PretrainConv(nn.Conv2d):
         # sparseWeight = mask * self.weight
         x = F.conv2d(
             # x, sparseWeight, self.bias, self.stride, self.padding, self.dilation, self.groups
-            x, self.sparse_weight, self.bias, self.stride, self.padding, self.dilation, self.groups
+            # x, self.sparse_weight, self.bias, self.stride, self.padding, self.dilation, self.groups
+            x, self.weight * self.mask, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
         return x
 

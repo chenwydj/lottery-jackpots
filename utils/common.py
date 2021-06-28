@@ -117,7 +117,7 @@ class checkpoint():
         record_config(args)
 
     def save_model(self, state, epoch, is_best):
-        save_path = f'{self.ckpt_dir}/model_last.pt'
+        save_path = f'{self.ckpt_dir}/epoch{epoch}.pt'
         torch.save(state, save_path)
         if is_best:
             shutil.copyfile(save_path, f'{self.ckpt_dir}/model_best.pt')
